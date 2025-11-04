@@ -30,14 +30,20 @@ player1 = player(150, 100, 200, 5, 335, 570, 5,"sprite\player.webp",0 )
 
 class enemy(player):
     #Atributes
-    def __init__(self, player_height, player_width, health, damage):
-        super().__init__(player_height, player_width, health, damage)
+    def __init__(self, player_height, player_width, health, damage, startposy, startposx ,speed):
+        super().__init__(player_height, player_width, health, damage, startposy, startposx ,speed)
         self.player_height = player_height
         self.player_width = player_width
         self.health = health
         self.damage = damage
+        self.startposx = startposx
+        self.startposy = startposy
+        self.speed = speed
+        self.hitbox = (self.player_height*0.8,self.player_width+10)
     
     #Methods: 
+
+enemy1 = enemy(150, 100, 200, 5, 335, 570+130, 2)
 
 # Game loop
 running = True
@@ -61,6 +67,14 @@ while running:
     player = pygame.transform.rotate(player,player1.angle)
     screen.blit(player, (player1.startposx,player1.startposy))
     pygame.draw.rect(screen,("white"),((player1.startposx-player1.player_width*0.18,player1.startposy+player1.player_height*0.30),(player1.hitbox)),2)
+
+
+    #Enemy1 sættes på skærmen.
+    enemy = pygame.image.load("sprite/enemy.webp")
+    # scale the loaded enemy image (pass the Surface), not the enemy object
+    enemy = pygame.transform.scale(enemy, (enemy1.player_width, enemy1.player_height))
+    screen.blit(enemy,(enemy1.startposx, enemy1.startposy))
+    pygame.draw.rect(screen,("white"),((enemy1.startposx-enemy1.player_width*0.18,enemy1.startposy+enemy1.player_height*0.30),(enemy1.hitbox)),2)
 
     keys = pygame.key.get_pressed()
     
