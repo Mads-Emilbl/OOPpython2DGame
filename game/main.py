@@ -1,4 +1,6 @@
 import pygame
+import random
+import math
 from pygame import*
 
 # Initialize
@@ -6,7 +8,7 @@ pygame.init()
 
 SPAWN_X = 570  
 SPAWN_Y = 335  
-DAMAGE_BLOCK = pygame.Rect(400, 400, 50, 50)  
+DAMAGE_BLOCK = pygame.Rect(0, 800, 1340,20)  
 
 # Create clock object
 clock = pygame.time.Clock()
@@ -30,12 +32,25 @@ class player:
         self.playerimg = playerimg
         self.angle = angle
         self.hitboxtoggle = hitboxtoggle
-    
     #Methods
 
+class Item:
+    def __init__(self,item_img):
+        self.item_img = item_img
+
+class Swords(Item):
+    def __init__(self,item_img,extra_damage):
+        super().__init__(item_img)
+        self.extra_damage = extra_damage
+
+
+class Armor(Item):
+    def __init__(self,item_img,extra_health):
+        super().__init__(item_img)
+        self.extra_health = extra_health
 
 #player1 objekt fra klassen player
-player1 = player(100, 100, 200, 5, 335, 570, 6,"sprite\player.png",0, 2)
+player1 = player(100, 100, 200.0, 5, 335, 570, 6, "sprite\player.png", 0, 2)
 
 class enemy(player):
     #Atributes
@@ -60,9 +75,11 @@ running = True
 # Add cooldown timer (milliseconds)
 last_action_time = 0
 last_hitbox_time = 0  # New timer for hitbox toggle
+last_damage_time = 0
 ACTION_COOLDOWN = 800  # 800 ms = 0.8 s
 HITBOX_COOLDOWN = 250  # 250 ms = 0.25 sec
 ACTION_DURATION = 500  # how long the swing/angle stays active (ms)
+DAMAGE_COOLDOWN = 400
 
 while running:
     for event in pygame.event.get():
@@ -148,11 +165,19 @@ while running:
     
     player_rect = pygame.Rect(player1.startposx, player1.startposy, player1.player_width, player1.player_height)
     if player_rect.colliderect(DAMAGE_BLOCK):
-        player1.health -= 2
+        damage_amount = random.uniform(0.5, 2)  # Generate random damage between 0.5 and 2
+        player1.health -= damage_amount
+        
+        # Round health up to the nearest whole number
+        if player1.health < 0:
+            player1.health = 0  # Prevent negative health
+        else:
+            player1.health = int(player1.health) + (1 if player1.health % 1 > 0 else 0)  # Round up if there's a fraction
+
         if player1.health <= 0:
             font = pygame.font.Font(None, 74)
             text = font.render('Press R to respawn', True, ("white"))
-            screen.blit(text, (600, 200))
+            screen.blit(text, (450, 200))
             pygame.display.update()
             
         
