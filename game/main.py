@@ -9,6 +9,17 @@ pygame.init()
 SPAWN_X = 570  
 SPAWN_Y = 335  
 DAMAGE_BLOCK = pygame.Rect(0, 800, 1340,20)  
+ITEM_THING = pygame.Rect(1000,500,50,50)
+SWORD_THING = pygame.Rect(200,500,35,80)
+armor_picked = False
+sword_picked = False
+
+# load item image once (move this before the loop)
+armor_img = pygame.image.load("sprite/armor1.png")
+armor_img = pygame.transform.scale(armor_img, (50,50))
+
+sword_img = pygame.image.load("sprite/sword2.png")
+sword_img = pygame.transform.scale(sword_img, (35,80))
 
 # Create clock object
 clock = pygame.time.Clock()
@@ -20,7 +31,7 @@ pygame.display.set_caption("Hello Pygame")
 
 class player:
     #Attributes
-    def __init__(self, player_height, player_width, health, damage,startposy, startposx,speed,playerimg,angle, hitboxtoggle ):
+    def __init__(self, player_height, player_width, health, damage,startposy, startposx,speed,playerimg,angle, hitboxtoggle,max_health ):
         self.player_height = player_height
         self.player_width = player_width
         self.health = health
@@ -32,6 +43,7 @@ class player:
         self.playerimg = playerimg
         self.angle = angle
         self.hitboxtoggle = hitboxtoggle
+        self.max_health = max_health
     #Methods
 
 class Item:
@@ -43,14 +55,18 @@ class Swords(Item):
         super().__init__(item_img)
         self.extra_damage = extra_damage
 
+sword1 = Swords("sprite/sword.png",0)
+
 
 class Armor(Item):
     def __init__(self,item_img,extra_health):
         super().__init__(item_img)
         self.extra_health = extra_health
 
+armor1 = Armor("sprite/playerarmor1.png",0)
 #player1 objekt fra klassen player
-player1 = player(100, 100, 200.0, 5, 335, 570, 6, "sprite\player.png", 0, 2)
+
+player1 = player(100, 100, 200.0 + armor1.extra_health, 5.0 + sword1.extra_damage, 335, 570, 6, "sprite\player.png", 0, 2, 200)
 
 class enemy(player):
     #Atributes
@@ -91,7 +107,7 @@ while running:
     player = pygame.transform.scale(player, (player1.player_width, player1.player_height))
 
     # Load and scale sword image
-    sword = pygame.image.load("sprite/sword.png")  # Use forward slashes for paths
+    sword = pygame.image.load(sword1.item_img)  # Use forward slashes for paths
     sword = pygame.transform.scale(sword, (35, 80))
     sword = pygame.transform.rotate(sword, player1.angle)  # Rotate the sword based on player's angle
 
@@ -141,7 +157,7 @@ while running:
     player1.startposx = max(0, min(player1.startposx, screen_w - player1.player_width))
     player1.startposy = max(0, min(player1.startposy, screen_h - player1.player_height))
    
-    pygame.draw.rect(screen,("green"),((60,30),(360*(player1.health/200),60)),0)
+    pygame.draw.rect(screen,("green"),((60,30),(360*(player1.health/(200+armor1.extra_health)),60)),0)
     pygame.draw.rect(screen,("black"),((60,30),(360,60)),5)
     
 
@@ -151,19 +167,28 @@ while running:
     
     player_rect = pygame.Rect(player1.startposx, player1.startposy, player1.player_width, player1.player_height)
     if player_rect.colliderect(DAMAGE_BLOCK):
-        damage_amount = random.uniform(0.5, 2)  # Generate random damage between 0.5 and 2
+        damage_amount = random.uniform(0.5, 2)
         player1.health -= damage_amount
         
-        # Round health up to the nearest whole number
+    
         if player1.health < 0:
-            player1.health = 0  # Prevent negative health
+            player1.health = 0  
         else:
-            player1.health = int(player1.health) + (1 if player1.health % 1 > 0 else 0)  # Round up if there's a fraction
+            player1.health = int(player1.health) + (1 if player1.health % 1 > 0 else 0)  
 
         if player1.health <= 0:
             font = pygame.font.Font(None, 74)
             text = font.render('Press R to respawn', True, ("white"))
+            player1.max_health = 200
+            armor1.extra_health = 0
+            sword1.extra_damage = 0
+            armor_picked = False
+            sword_picked = False
+            player1.playerimg = "sprite/PLAYER.PNG"
+            sword1.item_img = "sprite/sword.png"
             screen.blit(text, (450, 200))
+            pygame.mixer.music.load("sprite/tmp_7901-951678082.mp3")
+            pygame.mixer.music.play(1)
             pygame.display.update()
             
         
@@ -179,13 +204,43 @@ while running:
                             player1.health = 200
                             waiting = False
     font = pygame.font.Font(None, 35)
-    health_text=f"{player1.health}/200"
+    health_text=f"{player1.health}/{player1.max_health}"
     text = font.render(health_text, True, ("white"))
     screen.blit(text, (60, 100))
 
-    pygame.display.update()
-    clock.tick(FPS)  # Limit frame rate
 
+    pygame.draw.rect(screen,"white",ITEM_THING,-1)
+
+    
+    if not armor_picked:
+        screen.blit(armor_img, ITEM_THING.topleft)
+        pygame.draw.rect(screen, (255,0,0), ITEM_THING, -1)  
+    
+    pygame.draw.rect(screen,"white",SWORD_THING,-1)
+    
+    if not sword_picked:
+        screen.blit(sword_img, SWORD_THING.topleft)
+        pygame.draw.rect(screen, (255,0,0), SWORD_THING, -1) 
+
+    
+    player_rect = pygame.Rect(player1.startposx, player1.startposy, player1.player_width, player1.player_height)
+    if not armor_picked and player_rect.colliderect(ITEM_THING):
+        armor_picked = True
+        player1.max_health = 300
+        armor1.extra_health = 100
+        new_max = 200 + armor1.extra_health
+        player1.health = min(player1.health + armor1.extra_health, new_max)
+        player1.playerimg = "sprite/playerarmor1.png"
+    
+    
+    player_rect = pygame.Rect(player1.startposx, player1.startposy, player1.player_width, player1.player_height)
+    if not sword_picked and player_rect.colliderect(SWORD_THING):
+        sword_picked = True
+        sword1.extra_damage = 5
+        sword1.item_img = "sprite/sword2.png"
+
+    pygame.display.update()
+    clock.tick(FPS) 
 
 # Quit Pygame
 pygame.quit()
