@@ -29,6 +29,16 @@ FPS = 60  # Set desired frame rate
 screen = pygame.display.set_mode((1340, 820))
 pygame.display.set_caption("Hello Pygame")
 
+pygame.mixer.music.load("sprite/massobeats - honey jam (freetouse.com).mp3")
+pygame.mixer.music.play(-1)
+
+# preload sound effect (use .wav/.ogg if mp3 gives trouble)
+swing_sound = pygame.mixer.Sound("sprite/quick-swing-sound-419581.mp3")
+swing_sound.set_volume(0.8)
+
+death_sound = pygame.mixer.Sound("sprite/tmp_7901-951678082.mp3")
+death_sound.set_volume(0.6)
+
 class player:
     #Attributes
     def __init__(self, player_height, player_width, health, damage,startposy, startposx,speed,playerimg,angle, hitboxtoggle,max_health ):
@@ -193,8 +203,7 @@ while running:
     if keys[pygame.K_q] and (current_time - last_action_time) >= ACTION_COOLDOWN:
         last_action_time = current_time
         player1.angle = -90
-        pygame.mixer.music.load("sprite/quick-swing-sound-419581.mp3")
-        pygame.mixer.music.play(1)
+        swing_sound.play()
         # Player melee attack: damage all enemies inside the player's red circle
         attack_radius = player1.player_height * 1.4
         player_center = pygame.math.Vector2(player1.startposx + player1.player_width * 0.5,
@@ -258,52 +267,37 @@ while running:
             if (current_time - enemy_obj.last_damage_time) >= ENEMY_DAMAGE_INTERVAL_MS:
                 player1.health -= enemy_obj.damage
                 enemy_obj.last_damage_time = current_time
-    
-
-    if player_rect.colliderect(DAMAGE_BLOCK):
-        damage_amount = random.uniform(0.5, 2)
-        player1.health -= damage_amount
-        
-    
-        if player1.health < 0:
-            player1.health = 0  
-        else:
-            player1.health = int(player1.health) + (1 if player1.health % 1 > 0 else 0)  
-
-        if player1.health <= 0:
-            font = pygame.font.Font(None, 74)
-            text = font.render('Press R to respawn', True, ("white"))
-            player1.max_health = 200
-            armor1.extra_health = 0
-            sword1.extra_damage = 0
-            armor_picked = False
-            sword_picked = False
-            player1.playerimg = "sprite/PLAYER.PNG"
-            sword1.item_img = "sprite/sword.png"
-            screen.blit(text, (450, 200))
-            pygame.mixer.music.load("sprite/tmp_7901-951678082.mp3")
-            pygame.mixer.music.play(1)
-            pygame.display.update()
-            
-        
-            waiting = True
-            while waiting:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_r:
-                            player1.startposx = SPAWN_X
-                            player1.startposy = SPAWN_Y
-                            player1.health = 200
-                            waiting = False
+                
+                # CHECK FOR DEATH HERE (add this block)
+                if player1.health <= 0:
+                    font = pygame.font.Font(None, 74)
+                    text = font.render('Press R to respawn', True, ("white"))
+                    player1.max_health = 200
+                    armor1.extra_health = 0
+                    sword1.extra_damage = 0
+                    armor_picked = False
+                    sword_picked = False
+                    player1.playerimg = "sprite/PLAYER.PNG"
+                    sword1.item_img = "sprite/sword.png"
+                    screen.blit(text, (450, 200))
+                    death_sound.play()
+                    pygame.display.update()
+                    
+                    waiting = True
+                    while waiting:
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                pygame.quit()
+                            if event.type == pygame.KEYDOWN:
+                                if event.key == pygame.K_r:
+                                    player1.startposx = SPAWN_X
+                                    player1.startposy = SPAWN_Y
+                                    player1.health = 200
+                                    waiting = False
     font = pygame.font.Font(None, 35)
     health_text=f"{player1.health}/{player1.max_health}"
     text = font.render(health_text, True, ("white"))
     screen.blit(text, (60, 100))
-
-    pygame.display.update()
-
     pygame.draw.rect(screen,"white",ITEM_THING,-1)
 
     
