@@ -3,7 +3,6 @@ import random
 import math
 from pygame import*
 
-# Initialize
 pygame.init()
 
 SPAWN_X = 570  
@@ -14,16 +13,15 @@ armor_picked = False
 sword_picked = False
 enemy_kills = 0
 
-# load item image once (move this before the loop)
+# loader items
 armor_img = pygame.image.load("sprite/armor1.png")
 armor_img = pygame.transform.scale(armor_img, (50,50))
 
 sword_img = pygame.image.load("sprite/sword2.png")
 sword_img = pygame.transform.scale(sword_img, (35,80))
 
-# Create clock object
 clock = pygame.time.Clock()
-FPS = 60  # Set desired frame rate
+FPS = 60  
 
 # Game window
 screen = pygame.display.set_mode((1340, 820))
@@ -33,7 +31,7 @@ pygame.mixer.music.load("sprite/massobeats - honey jam (freetouse.com).mp3")
 pygame.mixer.music.rewind()
 pygame.mixer.music.play(loops=-1,start=3.0)
 
-# preload sound effect (use .wav/.ogg if mp3 gives trouble)
+# preloader lyde så de kan spilles senere
 swing_sound = pygame.mixer.Sound("sprite/quick-swing-sound-419581.mp3")
 swing_sound.set_volume(0.8)
 
@@ -43,7 +41,6 @@ death_sound.set_volume(0.6)
 win_sound = pygame.mixer.Sound("sprite/goodresult-82807.mp3")
 
 class player:
-    #Attributes
     def __init__(self, player_height, player_width, health, damage,startposy, startposx,speed,playerimg,angle, hitboxtoggle,max_health ):
         self.player_height = player_height
         self.player_width = player_width
@@ -58,7 +55,7 @@ class player:
         self.angle = angle
         self.hitboxtoggle = hitboxtoggle
         self.max_health = max_health
-    #Methods
+
 
 class Item:
     def __init__(self,item_img):
@@ -78,12 +75,10 @@ class Armor(Item):
         self.extra_health = extra_health
 
 armor1 = Armor("sprite/playerarmor1.png",0)
-#player1 objekt fra klassen player
 
-player1 = player(100, 100, 200.0 + armor1.extra_health, 5.0 + sword1.extra_damage, 335, 570, 6, "sprite\player.png", 0, 2, 200)
+player1 = player(100, 100, 100.0 + armor1.extra_health, 5.0 + sword1.extra_damage, 335, 570, 6, "sprite\player.png", 0, 2, 100)
 
 class enemy():
-    #Atributes
     def __init__(self, player_height, player_width, health, damage, startposy, startposx ,speed):
         self.player_height = player_height
         self.player_width = player_width
@@ -93,61 +88,51 @@ class enemy():
         self.startposy = startposy
         self.speed = speed
         self.hitbox = (self.player_height*0.8,self.player_width+10)
-        # attack range in pixels: how close this enemy must get to attack
-        # default: ~60% of the larger enemy dimension
         self.attack_range = max(self.player_width, self.player_height) * 0.6
-    
-    #Methods: 
+     
     def move_towards(self, target_x, target_y, stop_distance=0, dt=1.0):
         """Move the enemy towards (target_x, target_y).
         Stops when within stop_distance (pixels) from the target.
         dt is seconds since last frame (use clock.tick(FPS)/1000.0).
         """
-        # current and target as vectors for smooth movement and overshoot prevention
         pos = pygame.math.Vector2(self.startposx, self.startposy)
         target = pygame.math.Vector2(target_x, target_y)
         direction = target - pos
         dist = direction.length()
         if dist <= 0:
             return
-        # If already within stopping distance, do nothing
         if dist <= stop_distance:
             return
-        # normalize and move by speed*dt, but don't overshoot the stop_distance
+        # normalize and move by speed
         direction = direction.normalize()
         move_amount = self.speed * dt
-        # maximum allowed move so we don't pass the stopping distance
         max_move = max(0, dist - stop_distance)
-        # clamp move_amount to max_move
         if move_amount > max_move:
             move_amount = max_move
         pos += direction * move_amount
-        # write back float positions
         self.startposx, self.startposy = pos.x, pos.y
 
-# Create multiple enemies with random spawn positions
-ENEMY_DAMAGE_INTERVAL_MS = 1500  # 2.5 seconds
+# spawner 5 enemies i starten
+ENEMY_DAMAGE_INTERVAL_MS = 1500 
 ENEMY_COUNT = 5
 enemies = []
-# screen size constants (match the window created above)
 SCREEN_W, SCREEN_H = 1340, 820
 for _ in range(ENEMY_COUNT):
-    sx = random.randint(0, SCREEN_W - 100)  # enemy width is 100 in our class usage
-    sy = random.randint(0, SCREEN_H - 150)  # enemy height is 150
-    e = enemy(75, 50, 70, 5, sy, sx, 120)  # speed in px/sec for visible movement
+    sx = random.randint(0, SCREEN_W - 100)  
+    sy = random.randint(0, SCREEN_H - 150)  
+    e = enemy(75, 50, 70, 5, sy, sx, 120) 
     e.last_damage_time = 0
     enemies.append(e)
 
-# Game loop
 running = True
 
-# Add cooldown timer (milliseconds)
+#Cooldown timer
 last_action_time = 0
-last_hitbox_time = 0  # New timer for hitbox toggle
+last_hitbox_time = 0  
 last_damage_time = 0
-ACTION_COOLDOWN = 800  # 800 ms = 0.8 s
-HITBOX_COOLDOWN = 250  # 250 ms = 0.25 sec
-ACTION_DURATION = 500  # how long the swing/angle stays active (ms)
+ACTION_COOLDOWN = 800  
+HITBOX_COOLDOWN = 250  
+ACTION_DURATION = 500  
 DAMAGE_COOLDOWN = 400
 
 while running:
@@ -158,31 +143,30 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
     # frame timing
-    dt = clock.tick(FPS) / 1000.0  # seconds since last frame
+    dt = clock.tick(FPS) / 1000.0  
     current_time = pygame.time.get_ticks()
 
     screen.fill("white")
     bg = pygame.image.load("sprite/background.webp")
     bg = pygame.transform.scale(bg,(1340,820))
     screen.blit(bg, (0,0))
-    # Create transparent surface
     circle_surface = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
-    pygame.draw.circle(circle_surface, (255,0,0,32), (player1.startposx+player1.player_width*0.5,player1.startposy+player1.player_height*0.5), player1.player_height*2.5, 0)
+    pygame.draw.circle(circle_surface, (255,0,0,32), (player1.startposx+player1.player_width*0.5,player1.startposy+player1.player_height*0.5), player1.player_height*1.5, 0)
     screen.blit(circle_surface, (0,0))
     player = pygame.image.load(player1.playerimg)
     player = pygame.transform.scale(player, (player1.player_width, player1.player_height))
 
     # Load and scale sword image
-    sword = pygame.image.load(sword1.item_img)  # Use forward slashes for paths
+    sword = pygame.image.load(sword1.item_img)  
     sword = pygame.transform.scale(sword, (35, 80))
-    sword = pygame.transform.rotate(sword, player1.angle)  # Rotate the sword based on player's angle
+    sword = pygame.transform.rotate(sword, player1.angle)  
 
-    # Blit the player image onto the screen
+    #Player image on screen
     screen.blit(player, (player1.startposx, player1.startposy))
 
-    # Blit the sword onto the screen at the player's position
-    sword_x = player1.startposx + (player1.player_width - sword.get_width()) / 2  # Center sword
-    sword_y = player1.startposy  # Adjust as needed
+    #Sword at player's position
+    sword_x = player1.startposx + (player1.player_width - sword.get_width()) / 2  
+    sword_y = player1.startposy  
     screen.blit(sword, (sword_x+30, sword_y+20))
     pygame.draw.rect(screen,("white"),((player1.startposx,player1.startposy),(player1.hitbox)),player1.hitboxtoggle)
 
@@ -200,19 +184,16 @@ while running:
     if keys[pygame.K_s]:
         player1.startposy += player1.speed
         
-    # Simple toggle with H key
     if keys[pygame.K_h] and (current_time - last_hitbox_time) >= HITBOX_COOLDOWN:
         last_hitbox_time = current_time
         player1.hitboxtoggle = -1 if player1.hitboxtoggle == 2 else 2
     
 
-    # Q action: only trigger if cooldown has elapsed
     if keys[pygame.K_SPACE] and (current_time - last_action_time) >= ACTION_COOLDOWN:
         last_action_time = current_time
         player1.angle = -90
         swing_sound.play()
-        # Player melee attack: damage all enemies inside the player's red circle
-        attack_radius = player1.player_height * 2.5
+        attack_radius = player1.player_height * 1.5
         player_center = pygame.math.Vector2(player1.startposx + player1.player_width * 0.5,
                                             player1.startposy + player1.player_height * 0.5)
         dead_enemies = []
@@ -221,16 +202,13 @@ while running:
                                               enemy_obj.startposy + enemy_obj.player_height * 0.5)
             if (enemy_center - player_center).length() <= attack_radius:
                 enemy_obj.health -= player1.damage
-                # clamp
                 if enemy_obj.health <= 0:
                     dead_enemies.append(enemy_obj)
-        # remove dead enemies after iterating
         for d in dead_enemies:
             if d in enemies:
                 enemies.remove(d)
                 enemy_kills += 1
 
-    # Reset angle after the short action duration has passed
     if (current_time - last_action_time) >= ACTION_DURATION:
         player1.angle = 0
 
@@ -239,23 +217,19 @@ while running:
     player1.startposx = max(0, min(player1.startposx, screen_w - player1.player_width))
     player1.startposy = max(0, min(player1.startposy, screen_h - player1.player_height))
    
-    pygame.draw.rect(screen,("green"),((60,30),(360*(player1.health/(200+armor1.extra_health)),60)),0)
+    pygame.draw.rect(screen,("green"),((60,30),(360*(player1.health/(100+armor1.extra_health)),60)),0)
     pygame.draw.rect(screen,("black"),((60,30),(360,60)),5)
     # Move and draw all enemies
     player_center_x = player1.startposx + player1.player_width * 0.5
     player_center_y = player1.startposy + player1.player_height * 0.5
-    # player's rect for collision checks (use updated player position)
     player_rect = pygame.Rect(int(player1.startposx), int(player1.startposy), int(player1.player_width), int(player1.player_height))
 
-    # cache enemy image once per frame
     enemy_img = pygame.image.load("sprite/enemy.webp")
 
-    # player's rect for collision checks (use updated player position)
     player_rect = pygame.Rect(int(player1.startposx), int(player1.startposy), int(player1.player_width), int(player1.player_height))
 
 
     for enemy_obj in enemies:
-        # move toward the player but stop once inside the enemy's attack range
         enemy_obj.move_towards(player_center_x, player_center_y, enemy_obj.attack_range, dt)
         scaled = pygame.transform.scale(enemy_img, (enemy_obj.player_width, enemy_obj.player_height))
         screen.blit(scaled, (enemy_obj.startposx, enemy_obj.startposy))
@@ -263,23 +237,21 @@ while running:
 
         enemy_rect = pygame.Rect(int(enemy_obj.startposx), int(enemy_obj.startposy), int(enemy_obj.player_width), int(enemy_obj.player_height))
         pygame.draw.rect(screen, "white", enemy_rect, player1.hitboxtoggle)
-        # enemy attack condition: if the enemy is within its attack_range of the player's center
+        #Attack if enemy is within its attack_range
         enemy_center = pygame.math.Vector2(enemy_obj.startposx + enemy_obj.player_width * 0.5,
                                           enemy_obj.startposy + enemy_obj.player_height * 0.5)
         player_center = pygame.math.Vector2(player_center_x, player_center_y)
         dist_to_player = (enemy_center - player_center).length()
         if dist_to_player <= enemy_obj.attack_range:
-            # within attack range: apply damage with per-enemy cooldown
             if (current_time - enemy_obj.last_damage_time) >= ENEMY_DAMAGE_INTERVAL_MS:
                 player1.health -= enemy_obj.damage
                 enemy_obj.last_damage_time = current_time
 
                 
-                # CHECK FOR DEATH HERE (add this block)
                 if player1.health <= 0:
                     font = pygame.font.Font(None, 74)
                     text = font.render('Press R to respawn', True, ("white"))
-                    player1.max_health = 200
+                    player1.max_health = 100
                     armor1.extra_health = 0
                     sword1.extra_damage = 0
                     enemy_kills = 0
@@ -300,7 +272,7 @@ while running:
                                 if event.key == pygame.K_r:
                                     player1.startposx = SPAWN_X
                                     player1.startposy = SPAWN_Y
-                                    player1.health = 200
+                                    player1.health = 100
                                     waiting = False
     font = pygame.font.Font(None, 35)
     health_text=f"{player1.health}/{player1.max_health}"
@@ -320,7 +292,7 @@ while running:
         win_screen.set_alpha()
         win_screen.fill((0,0,0))
         screen.blit(win_screen,(0,0))
-        player1.max_health = 200
+        player1.max_health = 100
         armor1.extra_health = 0
         sword1.extra_damage = 0
         enemy_kills = 0
@@ -341,14 +313,14 @@ while running:
                     if event.key == pygame.K_r:
                         player1.startposx = SPAWN_X
                         player1.startposy = SPAWN_Y
-                        player1.health = 200
+                        player1.health = 100
                         waiting = False
         
 
 
-                    #spawn enemies when less than two are left
+                    #spawner enemies når der er få tilbage
     if len(enemies) <= 4:
-            for _ in range(4):
+            for _ in range(7):
                 sx = random.randint(0, SCREEN_W - 100)
                 sy = random.randint(0, SCREEN_H - 150)
                 e = enemy(75, 50, 70, 5, sy, sx, 120)
@@ -370,9 +342,9 @@ while running:
     player_rect = pygame.Rect(player1.startposx, player1.startposy, player1.player_width, player1.player_height)
     if not armor_picked and player_rect.colliderect(ITEM_THING):
         armor_picked = True
-        player1.max_health = 300
-        armor1.extra_health = 100
-        new_max = 200 + armor1.extra_health
+        player1.max_health = 150
+        armor1.extra_health = 50
+        new_max = 100 + armor1.extra_health
         player1.health = min(player1.health + armor1.extra_health, new_max)
         player1.playerimg = "sprite/playerarmor1.png"
     
@@ -382,11 +354,9 @@ while running:
         sword_picked = True
         sword1.extra_damage = 10.0
         sword1.item_img = "sprite/sword2.png"
-        # update player's damage to include the sword bonus
         player1.damage = player1.base_damage + sword1.extra_damage
 
     pygame.display.update()
     clock.tick(FPS) 
 
-# Quit Pygame
 pygame.quit()
